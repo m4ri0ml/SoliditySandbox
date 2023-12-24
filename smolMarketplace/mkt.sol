@@ -24,8 +24,7 @@ contract NFTDepositContract {
     mapping(address => mapping(uint256 => NFTDeposit)) public tokenDeposits;
 
     // Optional smolMarketplace fees
-    uint256 buyerFee;
-    uint256 sellerFee;
+    uint256 mktFee;
 
     /*
     ##############################
@@ -92,7 +91,8 @@ contract NFTDepositContract {
         NFTDeposit nftInfo = tokenDeposits[_collection][_tokenId];
         require(nftInfo.forSale, "Not for sale");
         
-        ERC20(WETH).transferFrom(msg.sender, nftInfo.depositor, nftInfo.minimumPrice);
+        uint256 fee = (nftInfo.minimumPrice * mktFee) / 100;
+        ERC20(WETH).transferFrom(msg.sender, nftInfo.depositor, nftInfo.minimumPrice - fee);
 
         IERC721 nft = IERC721(_collection);
         nft.transfer(address(this), msg.sender, _tokenId);
@@ -124,7 +124,6 @@ contract NFTDepositContract {
 
         IERC721 nft = IERC721(_collection);
         nft.transfer(address(this), msg.sender, _tokenId);
-
     }
 
     /*
