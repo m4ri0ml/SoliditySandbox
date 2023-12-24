@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "../utils/IERC721.sol";
@@ -12,19 +13,25 @@ contract NFTDepositContract {
         uint256 tokenId;
         uint256 minimumPrice;
         bool forSale;
-        mapping (address => Bid) bids;
+        address[] bidders;
     }
 
     struct Bid {
+        address bidder;
+        uint256 bidId;
         uint256 amount;
         uint256 deadline;
     }
 
-    // Mapping from NFT contract address and token ID to NFT deposit information
     mapping(address => mapping(uint256 => NFTDeposit)) public tokenDeposits;
+    mapping(bytes32 => uint256) private bidIdMapping;
+    mapping(uint256 => Bid) public bids;
 
     // Optional smolMarketplace fees
-    uint256 mktFee;
+    uint256 public mktFee = 5;
+
+    uint256 private bidId;
+    address private WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
     /*
     ##############################
@@ -38,25 +45,24 @@ contract NFTDepositContract {
 
         nft.transferFrom(msg.sender, address(this), _tokenId);
 
-        NFTDeposit memory nftInfo = NFTDeposit({
-            depositor: msg.sender,
-            collection: _collection,
-            tokenId: _tokenId,
-            minimumPrice: 0,
-            forSale: false
-        });
+        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
 
-        tokenDeposits[_collection][_tokenId] = nftInfo;
-    }
+        nftData.depositor = msg.sender;
+        nftData.collection = _collection;
+        nftData.tokenId = _tokenId;
+        nftData.minimumPrice = 0; // Set the default value or update as needed
+        nftData.forSale = false; // Set the default value or update as needed
+
+    }   
 
     function withdrawNFT(address _collection, uint256 _tokenId) public {
-        NFTDeposit nftInfo = tokenDeposits[_collection][_tokenId];
-        require(nftInfo.depositor == msg.sender, "You are not the owner");
+        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+        require(nftData.depositor == msg.sender, "You are not the owner");
 
         IERC721 nft = IERC721(_collection);
 
         nft.transferFrom(address(this), msg.sender, _tokenId);
-        delete nftInfo;
+        delete nftData;
     }
 
     /*
@@ -66,19 +72,21 @@ contract NFTDepositContract {
     */
 
     function listNFT(address _collection, uint256 _tokenId, uint256 _price) public {
-        NFTDeposit nftInfo = tokenDeposits[_collection][_tokenId];
-        require(nftInfo.depositor == msg.sender);
+        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+        require(nftData.depositor == msg.sender);
 
-        nftInfo.forSale = true;
-        nftInfo.minimumPrice = _price;
+        nftData.forSale = true;
+        nftData.minimumPrice = _price;
     }
 
-    function unlistNFT(address collection, uint256 tokenId) public {
-        NFTDeposit nftInfo = tokenDeposits[_collection][_tokenId];
-        require(nftInfo.depositor == msg.sender);
+    function unlistNFT(address _collection, uint256 _tokenId) public {
+        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+        require(nftData.depositor == msg.sender);
         
-        nftInfo.forSale = false;
-        nftInfo.minimumPrice = 0;
+        nftData.forSale = false;
+        nftData.minimumPrice = 0;
+
+        delete nftData;
     }
 
     /*
@@ -88,42 +96,71 @@ contract NFTDepositContract {
     */
 
     function buyNFT(address _collection, uint256 _tokenId) public {
-        NFTDeposit nftInfo = tokenDeposits[_collection][_tokenId];
-        require(nftInfo.forSale, "Not for sale");
+        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+        require(nftData.forSale, "Not for sale");
         
-        uint256 fee = (nftInfo.minimumPrice * mktFee) / 100;
-        ERC20(WETH).transferFrom(msg.sender, nftInfo.depositor, nftInfo.minimumPrice - fee);
+        uint256 fee = (nftData.minimumPrice * mktFee) / 100;
+        IERC20(WETH).transferFrom(msg.sender, nftData.depositor, nftData.minimumPrice - fee);
 
         IERC721 nft = IERC721(_collection);
-        nft.transfer(address(this), msg.sender, _tokenId);
+        nft.transferFrom(address(this), msg.sender, _tokenId);
 
-        delete nftInfo;
+        delete nftData;
     }
 
-    function addBid(address _collection, uint256 _tokenId, uint256 _amount, uint256 _deadline) public {
-        NFTDeposit nftInfo = tokenDeposits[_collection][_tokenId];
-        require(nftInfo.forSale, "Not for sale");
+    function placeBid(address _collection, uint256 _tokenId, uint256 _amount, uint256 _deadline) public {
+        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+        require(nftData.forSale, "Not for sale");
+        require(block.timestamp < bid.deadline, "Deadline must be greater that current time");
 
-        nftInfo.bids[msg.sender] == Bid(_amount, _deadline);
-        ERC20(WETH).transferFrom(msg.sender, address(this), _amount);
+        IERC20(WETH).transferFrom(msg.sender, address(this), _amount);
+
+        bytes32 bidKey = _getBidKey(msg.sender, collection, tokenId);
+        uint256 bidId = bidIdMapping[bidKey];
+
+        bids[bidId] = Bid({
+            bidId: bidId,
+            amount: _amount,
+            deadline: _deadline
+        });
+
+        nftDeposit.bidders.push(msg.sender);
+        bidId += 1;
     }
 
     function removeBid(address _collection, uint256 _tokenId) public {
-        NFTDeposit nftInfo = tokenDeposits[_collection][_tokenId];
-        require(nftInfo.bids[msg.sender].amount > 0, "No bids available");
+        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+        require(nftData.bids[msg.sender].amount > 0, "No bids available");
 
-        ERC20(WETH).transfer(msg.sender, nftInfo.bids[msg.sender].amount);
-        delete nftInfo.bids[msg.sender];
+        bytes32 bidKey = _getBidKey(msg.sender, collection, tokenId);
+        uint256 bidId = bidIdMapping[bidKey];
+
+        require(bidId != 0, "No active bid found");
+        Bid storage bid = bids[bidId];
+        require(bid.bidder == msg.sender, "Not the bidder");
+
+        IERC20(WETH).transfer(msg.sender, nftData.bids[msg.sender].amount);
+        delete bids[bidId];
+        delete bidIdMapping[bidKey];
     }
 
     function acceptBid(address _collection, uint256 _tokenId, address _bidder) public {
-        NFTDeposit nftInfo = tokenDeposits[_collection][_tokenId];
-        require(nftInfo.bids[_bidder].deadline < block.timestamp, "Bid expired");
+        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+        require(block.timestamp < bid.deadline, "Bid expired");
+        require(nftData.depositor == msg.sender, "You are not the owner");
 
-        ERC20(WETH).transfer(nftInfo.depositor, nftInfo.bids[_bidder].amount);
+        bytes32 bidKey = _getBidKey(_bidder, collection, tokenId);
+        uint256 bidId = bidIdMapping[bidKey];
+
+        Bid storage bid = bids[bidId];
+
+        IERC20(WETH).transfer(nftData.depositor, bid.amount);
 
         IERC721 nft = IERC721(_collection);
-        nft.transfer(address(this), msg.sender, _tokenId);
+        nft.transferFrom(address(this), _bidder, _tokenId);
+
+        delete bids[bidId];
+        delete bidIdMapping[bidKey];
     }
 
     /*
@@ -133,15 +170,33 @@ contract NFTDepositContract {
     */
 
     function getNFTPrice(address _collection, uint256 _tokenId) public view returns(uint256) {
-        NFTDeposit nftInfo = tokenDeposits[_collection][_tokenId];
-        require(nftInfo.forSale, "NFT is not for sale");
+        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+        require(nftData.forSale, "NFT is not for sale");
 
-        return nftInfo.minimumPrice;
+        return nftData.minimumPrice;
     }
 
-    function isForSale(address _collection, uint256 _tokenId) public view returns(uint256) {
-        NFTDeposit nftInfo = tokenDeposits[_collection][_tokenId];
+    function isForSale(address _collection, uint256 _tokenId) public view returns(bool) {
+        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
 
-        return nftInfo.forSale;
+        return nftData.forSale;
+    }
+
+    function getBidsForNFT(address collection, uint256 tokenId) public view returns (Bid[] memory) {
+        NFTDeposit storage nftDeposit = tokenDeposits[collection][tokenId];
+        Bid[] memory nftBids = new Bid[](nftDeposit.bidders.length);
+
+        for (uint i = 0; i < nftDeposit.bidders.length; i++) {
+            bytes32 bidKey = keccak256(abi.encodePacked(nftDeposit.bidders[i], collection, tokenId));
+            uint256 bidId = bidIdMapping[bidKey];
+            nftBids[i] = bids[bidId];
+        }
+
+        return nftBids;
+    }
+
+    // Generate a key that associates a bidder with a bidId
+    function _getBidKey(address bidder, address collection, uint256 tokenId) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(bidder, collection, tokenId));
     }
 }
