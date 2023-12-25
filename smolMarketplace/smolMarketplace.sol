@@ -3,9 +3,9 @@ pragma solidity ^0.8.0;
 
 import "../utils/IERC721.sol";
 import "../utils/IERC20.sol";
-import "../utils/Ownable.sol";
+import "../utils/Owned.sol";
 
-contract smolMarketplace is Ownable {
+contract smolMarketplace is Owned {
 
     // Collection + tokenId are used as unique identifiers for each NFT struct.
     struct NFTDeposit {
@@ -30,7 +30,7 @@ contract smolMarketplace is Ownable {
 
     // Marketplace variables
     uint256 public mktFee;
-    bool paused;
+    bool public paused;
 
     address immutable WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
@@ -39,6 +39,8 @@ contract smolMarketplace is Ownable {
           Deposit / Withdraw       
     ##############################
     */
+
+    constructor () Owned(msg.sender) {}
 
     function depositNFT(address _collection, uint256 _tokenId) public {
         IERC721 nft = IERC721(_collection);
@@ -58,7 +60,7 @@ contract smolMarketplace is Ownable {
     }   
 
     function withdrawNFT(address _collection, uint256 _tokenId) public {
-        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+        NFTDeposit memory nftData = tokenDeposits[_collection][_tokenId];
         require(nftData.depositor == msg.sender, "You are not the owner");
 
         IERC721 nft = IERC721(_collection);
@@ -73,8 +75,8 @@ contract smolMarketplace is Ownable {
     ##############################
     */
 
-    function listNFT(address _collection, uint256 _tokenId, uint256 _price) public {
-        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+    function listNFT(address _collection, uint256 _tokenId, uint256 _price) public view {
+        NFTDeposit memory nftData = tokenDeposits[_collection][_tokenId];
         require(nftData.depositor == msg.sender);
         require(!paused, "Marketplace paused");
 
@@ -82,8 +84,8 @@ contract smolMarketplace is Ownable {
         nftData.minimumPrice = _price;
     }
 
-    function unlistNFT(address _collection, uint256 _tokenId) public {
-        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+    function unlistNFT(address _collection, uint256 _tokenId) public view {
+        NFTDeposit memory nftData = tokenDeposits[_collection][_tokenId];
         require(nftData.depositor == msg.sender);
         
         nftData.forSale = false;
@@ -99,7 +101,7 @@ contract smolMarketplace is Ownable {
     */
 
     function buyNFT(address _collection, uint256 _tokenId) public {
-        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+        NFTDeposit memory nftData = tokenDeposits[_collection][_tokenId];
         require(nftData.forSale, "Not for sale");
         require(!paused, "Marketplace paused");
         
@@ -124,6 +126,7 @@ contract smolMarketplace is Ownable {
         uint256 bidId = bidIdMapping[bidKey];
 
         bids[bidId] = Bid({
+            bidder: msg.sender,
             bidId: bidId,
             amount: _amount,
             deadline: _deadline
@@ -133,9 +136,6 @@ contract smolMarketplace is Ownable {
     }
 
     function removeBid(address _collection, uint256 _tokenId) public {
-        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
-        require(nftData.bids[msg.sender].amount > 0, "No bids available");
-
         bytes32 bidKey = _getBidKey(msg.sender, _collection, _tokenId);
         uint256 bidId = bidIdMapping[bidKey];
 
@@ -143,7 +143,7 @@ contract smolMarketplace is Ownable {
         Bid storage bid = bids[bidId];
         require(bid.bidder == msg.sender, "Not the bidder");
 
-        IERC20(WETH).transfer(msg.sender, nftData.bids[msg.sender].amount);
+        IERC20(WETH).transfer(msg.sender, bid.amount);
         delete bids[bidId];
         delete bidIdMapping[bidKey];
     }
