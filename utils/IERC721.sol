@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.0;
 
-import {IERC165} from "../../utils/introspection/IERC165.sol";
+import {IERC165} from "./IERC165.sol";
 
 /**
  * @dev Required interface of an ERC-721 compliant contract.
