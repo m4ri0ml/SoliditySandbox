@@ -21,7 +21,9 @@ contract smolMarketplace is Owned {
         address bidder;
         uint256 bidId;
         uint256 amount;
+        uint256 date;
         uint256 deadline;
+        bool isDecaying;
     }
 
     mapping(address => mapping(uint256 => NFTDeposit)) public tokenDeposits;
@@ -114,7 +116,7 @@ contract smolMarketplace is Owned {
         delete nftData;
     }
 
-    function placeBid(address _collection, uint256 _tokenId, uint256 _amount, uint256 _deadline) public {
+    function placeBid(address _collection, uint256 _tokenId, uint256 _amount, uint256 _deadline, bool _decaying) public {
         NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
         require(!paused, "Marketplace paused");
         require(nftData.forSale, "Not for sale");
@@ -127,9 +129,11 @@ contract smolMarketplace is Owned {
 
         bids[bidId] = Bid({
             bidder: msg.sender,
+            date: block.timestamp,
             bidId: bidId,
             amount: _amount,
-            deadline: _deadline
+            deadline: _deadline,
+            isDecaying: _decaying
         });
 
         nftData.bidders.push(msg.sender);
@@ -154,17 +158,22 @@ contract smolMarketplace is Owned {
 
         bytes32 bidKey = _getBidKey(_bidder, _collection, _tokenId);
         uint256 bidId = bidIdMapping[bidKey];
-
-        require(block.timestamp < bids[bidId].deadline, "Bid expired");
-        require(nftData.depositor == msg.sender, "You are not the owner");
-
-
         Bid storage bid = bids[bidId];
 
-        IERC20(WETH).transfer(nftData.depositor, bid.amount);
+        require(block.timestamp < bid.deadline, "Bid expired");
+        require(nftData.depositor == msg.sender, "You are not the owner");
 
         IERC721 nft = IERC721(_collection);
-        nft.transferFrom(address(this), _bidder, _tokenId);
+
+        if (bid.isDecaying) {
+            uint256 bidValue = getDecayingBidValue(_collection, _tokenId, _bidder);
+
+            IERC20(WETH).transfer(nftData.depositor, bidValue);
+            nft.transferFrom(address(this), _bidder, _tokenId);
+        } else{
+            IERC20(WETH).transfer(nftData.depositor, bid.amount);
+            nft.transferFrom(address(this), _bidder, _tokenId);
+        }
 
         delete bids[bidId];
         delete bidIdMapping[bidKey];
@@ -200,6 +209,35 @@ contract smolMarketplace is Owned {
         }
 
         return nftBids;
+    }
+
+    function getDecayingBidValue(address _collection, uint256 _tokenId, address _bidder) public view returns (uint256) {
+        bytes32 bidKey = _getBidKey(_bidder, _collection, _tokenId);
+        uint256 bidId = bidIdMapping[bidKey];
+        Bid storage bid = bids[bidId];
+
+        uint256 amount = bid.amount;
+        uint256 date = bid.date;
+        uint256 deadline = bid.deadline;
+
+        if (bid.isDecaying) {
+            if (block.timestamp > deadline) {
+                return 0;     
+            } else {
+                uint256 totalDuration = deadline - date;
+                uint256 elapsedTime = block.timestamp - date;
+                uint256 decreaseRate = amount / totalDuration;
+                uint256 decreasedAmount = elapsedTime * decreaseRate;
+
+                if (amount > decreasedAmount) {
+                    return amount - decreasedAmount;
+                } else {
+                    return 0;
+                }
+            }
+        }
+
+        return 0;
     }
 
     // Generate a key that associates a bidder with a bidId
