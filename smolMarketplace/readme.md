@@ -61,7 +61,7 @@ Bidders have the option to cancel their bids under certain conditions, ensuring 
 
 ### To-Do / Ideas
 - **Multi-token**: Accept multiple ERC20 tokens as payments (Only WETH supported right now)
-- **Decaying bids**: Make a type of bid that decreases its offer as time passes.
+- **Decaying bids**: Make a type of bid that decreases its value as time passes. [**Done**]
 - **NFT Auctions**: Allow sellers to auction their NFT
 - **NFT Rentals**: Allow owners to rent their NFT for a fee.
 
