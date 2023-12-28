@@ -150,6 +150,7 @@ contract smolMarketplace is Owned {
         IERC20(WETH).transfer(msg.sender, bid.amount);
         delete bids[bidId];
         delete bidIdMapping[bidKey];
+        removeAddressFromBidders(_collection, _tokenId, msg.sender);
     }
 
     function acceptBid(address _collection, uint256 _tokenId, address _bidder) public {
@@ -192,6 +193,12 @@ contract smolMarketplace is Owned {
         return nftData.minimumPrice;
     }
 
+    function getNFTBidders(address _collection, uint256 _tokenId) public view returns(address[] memory) {
+        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+
+        return nftData.bidders;
+    }
+
     function isForSale(address _collection, uint256 _tokenId) public view returns(bool) {
         NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
 
@@ -199,11 +206,11 @@ contract smolMarketplace is Owned {
     }
 
     function getBidsForNFT(address _collection, uint256 _tokenId) public view returns (Bid[] memory) {
-        NFTDeposit storage nftDeposit = tokenDeposits[_collection][_tokenId];
-        Bid[] memory nftBids = new Bid[](nftDeposit.bidders.length);
+        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+        Bid[] memory nftBids = new Bid[](nftData.bidders.length);
 
-        for (uint i = 0; i < nftDeposit.bidders.length; i++) {
-            bytes32 bidKey = keccak256(abi.encodePacked(nftDeposit.bidders[i], _collection, _tokenId));
+        for (uint i = 0; i < nftData.bidders.length; i++) {
+            bytes32 bidKey = keccak256(abi.encodePacked(nftData.bidders[i], _collection, _tokenId));
             uint256 bidId = bidIdMapping[bidKey];
             nftBids[i] = bids[bidId];
         }
@@ -238,6 +245,19 @@ contract smolMarketplace is Owned {
         }
 
         return 0;
+    }
+
+    function removeAddressFromBidders(address _collection, uint256 _tokenId, address _bidder) public {
+        NFTDeposit storage nftData = tokenDeposits[_collection][_tokenId];
+        uint length = nftData.bidders.length;
+
+        for (uint i = 0; i < length; i++) {
+            if (nftData.bidders[i] == _bidder) {
+                nftData.bidders[i] = nftData.bidders[length - 1];
+                nftData.bidders.pop();
+                break;
+            }
+        }
     }
 
     // Generate a key that associates a bidder with a bidId
