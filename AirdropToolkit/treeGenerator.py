@@ -7,6 +7,8 @@ def keccak_hash(data):
     k.update(data.encode())
     return k.hexdigest()
 
+# Tree Generation Functions
+
 def generate_merkle_tree(data):
     mt = MerkleTools()
     for address, amount in data.items():
@@ -14,6 +16,8 @@ def generate_merkle_tree(data):
         mt.add_leaf(leaf_node)
     mt.make_tree()
     return mt
+
+# Proof Generation Functions
 
 def find_leaf_index(mt, leaf_node):
     for index in range(mt.get_leaf_count()):
@@ -30,8 +34,8 @@ def generate_merkle_proof(mt, address, amount):
 
 # Example usage - Better to use a json file for big distributions.
 data = {
-    '0x000158E60C393B51fdFAc71B14Ce70b70148C326': 100,
-    '0x9a285D90b567cEa64dD82737340E224Fd4202959': 200,
+    'address_1': 100,
+    'address_2': 200,
     # ... more addresses
 }
 
@@ -39,7 +43,7 @@ data = {
 merkle_tree = generate_merkle_tree(data)
 
 # Specify the address and amount for which you want to generate the proof
-specific_address = '0x9a285D90b567cEa64dD82737340E224Fd4202959'
+specific_address = ''
 specific_amount = 200
 
 # Generate the proof

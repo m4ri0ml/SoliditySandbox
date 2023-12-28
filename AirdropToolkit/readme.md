@@ -16,6 +16,8 @@ This airdrop system is designed to allow users to claim tokens by submitting a m
 1. **Prerequisites**:
    - Install [Node.js and npm](https://nodejs.org/).
    - Install Hardhat, Truffle or Foundry for testing and deployment (optional).
+   - Python 3.x
+   - MerkleTools and Crypto.Hash python libraries
    - A web3 wallet to interact with the smart contract.
 
 2. **Deployment**:
