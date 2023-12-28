@@ -1,13 +1,14 @@
 from merkletools import MerkleTools
 from Crypto.Hash import keccak
 
+# Instead of SHA-256 hash function we use Keccak to ensure compatibility with Solidity.
 def keccak_hash(data):
     k = keccak.new(digest_bits=256)
     k.update(data.encode())
     return k.hexdigest()
 
 def generate_merkle_tree(data):
-    mt = MerkleTools()  # Default hash type (SHA256)
+    mt = MerkleTools()
     for address, amount in data.items():
         leaf_node = keccak_hash(f'{address.lower()}{amount}')
         mt.add_leaf(leaf_node)
@@ -27,7 +28,7 @@ def generate_merkle_proof(mt, address, amount):
         return mt.get_proof(index)
     return None
 
-# Example usage
+# Example usage - Better to use a json file for big distributions.
 data = {
     '0x000158E60C393B51fdFAc71B14Ce70b70148C326': 100,
     '0x9a285D90b567cEa64dD82737340E224Fd4202959': 200,
