@@ -67,7 +67,11 @@ contract ETHPriceProvider is UsingTellor {
 
                 return tellorPrice;
             }
+        } else {
+            tellorPrice = getLatestTellorETHPrice();
+            return tellor;
         }
+
     }
 
     function checkChainlinkHealth(CLData memory clData) internal view returns(bool) {
