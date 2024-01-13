@@ -1,6 +1,8 @@
 # SoliditySandbox
 
-Welcome to `SoliditySandbox`, a collection of Solidity projects and experiments. This repository is a playground for various Solidity concepts, each contained in its own folder. Please note that the code found on this repository is not audited and in some cases might not even compile. Some of this code might get moved to its own standalone repo if I consider it worthy enough.
+Welcome to `SoliditySandbox`, a collection of Solidity projects and experiments. This repository is a playground for various Solidity concepts, each contained in its own folder. 
+
+Please note that the code found on this repository is not audited and in some cases might not even compile, some of this code might get moved to its own standalone repo if I consider it worthy enough.
 
 ## Projects Overview
 
@@ -25,7 +27,7 @@ Welcome to `SoliditySandbox`, a collection of Solidity projects and experiments.
   - Oracle fallback mechanism
 
 ### svgArt
-- **Description**: `svgArt`, contains code experimenting with creating NFTs using SVG fully on-chain.
+- **Description**: `svgArt` contains code experimenting with creating NFTs using SVG fully on-chain.
 - **Key Features**:
   - On-chain SVG generation
   - NFT mint experiments
