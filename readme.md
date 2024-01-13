@@ -1,32 +1,34 @@
 # SoliditySandbox
 
-Welcome to `SoliditySandbox`, a collection of Solidity projects and experiments. This repository is a playground for various Solidity concepts, each contained in its own folder. Below is a brief overview of each project.
+Welcome to `SoliditySandbox`, a collection of Solidity projects and experiments. This repository is a playground for various Solidity concepts, each contained in its own folder. Please note that the code found on this repository is not audited and in some cases might not even compile. Some of this code might get moved to its own standalone repo if I consider it worthy enough.
 
 ## Projects Overview
 
 ### AirdropToolkit
-- **Description**: This folder contains a repository designed to construct and execute token airdrops. It's a complete toolkit for anyone looking to distribute tokens efficiently and securely.
+- **Description**: This folder contains code designed to construct and execute token airdrops. It's a toolkit for anyone looking to distribute tokens to EVM addresses.
 - **Key Features**:
   - Airdrop construction
   - Execution mechanisms
 
 ### smolMarketplace
-- **Description**: `smolMarketplace` is a folder housing a Solidity contract for an NFT marketplace. This contract is a foundation for creating a decentralized platform for trading NFTs.
+- **Description**: `smolMarketplace` contains a Solidity contract for an NFT marketplace. This contract is the basic foundation to create a decentralized platform for trading NFTs.
 - **Key Features**:
   - NFT listing and trading
-  - Smart contract for decentralized marketplace
+  - NFT bidding
+  - Smart contract to enable a decentralized marketplace
 
 ### smolOracles
-- **Description**: The `smolOracles` folder contains a Solidity contract that fetches Ether prices while adhering to the Liquity oracle failure specifications. It's an essential tool for projects needing reliable price feeds.
+- **Description**: The `smolOracles` folder contains a Solidity contract that fetches Ether prices while adhering to the Liquity oracle failure specifications.
 - **Key Features**:
   - Ether price fetching
   - Adherence to Liquity oracle specs
+  - Oracle fallback mechanism
 
 ### svgArt
-- **Description**: In `svgArt`, you'll find experiments with creating NFTs using SVG fully on-chain. This folder is a testament to the potential of on-chain graphics in the NFT space.
+- **Description**: `svgArt`, contains code experimenting with creating NFTs using SVG fully on-chain.
 - **Key Features**:
   - On-chain SVG generation
-  - NFT creation experiments
+  - NFT mint experiments
 
 ---
 
