@@ -7,6 +7,6 @@ smolOracles/test/
 smolOracles/src/
 
 # Ignore specific files
-./smolOracles/foundry.toml
-foundry.tml
+smolOracles/foundry.toml
+foundry.toml
 *.html
