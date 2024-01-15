@@ -1,8 +1,8 @@
 /* 
     
     This contract is used to check the price of ETH at a given time using Chainlink 
-    as defaul source of Truth and Tellor as a fallback option. It tries to handle
-    several Oracle failures as Liquity Protocol oracle failure spec defines.
+    as defaul source of truth and Tellor as a fallback option. Its my attempt at handling
+    several Oracle failures only by looking at Liquity's spec and following the same assumptions
 
     SPEC: https://www.liquity.org/blog/price-oracles-in-liquity
 
@@ -17,6 +17,8 @@ import "./interfaces/AggregatorV3Interface.sol";
 import "./interfaces/UsingTellor.sol";
 
 contract ETHPriceProvider is UsingTellor {
+
+    test
 
     AggregatorV3Interface internal clPriceFeed;
     uint256 internal constant requestId = 1;
@@ -50,8 +52,8 @@ contract ETHPriceProvider is UsingTellor {
 
         // If Chainlink is healthy we continue working with its price data
         if (clOkey) {
-            clPrice = getLatestChainlinkETHPrice();
-            tellorPrice = getLatestTellorETHPrice();
+            uint256 clPrice = getLatestChainlinkETHPrice();
+            uint256 tellorPrice = getLatestTellorETHPrice();
 
             // If Chainlink price deviates more than 50% from previous price we compare it to Tellor's price,
             // if they match price is considered correct. If they dont match we check if Tellor's price
@@ -68,8 +70,8 @@ contract ETHPriceProvider is UsingTellor {
                 return tellorPrice;
             }
         } else {
-            tellorPrice = getLatestTellorETHPrice();
-            return tellor;
+            uint256 tellorPrice = getLatestTellorETHPrice();
+            return tellorPrice;
         }
 
     }
@@ -111,16 +113,13 @@ contract ETHPriceProvider is UsingTellor {
     // we assume ETH price cant be negative so we return uint256
     function getLatestChainlinkETHPrice() private view returns (uint256) {
         (, uint256 price, , ,) = priceFeed.latestRoundData();
-
         return price;
     }
 
     function getLatestTellorETHPrice() private view returns (uint256) {
         // Ensure that there is data available
         require(isDataNew(requestId), "Data is stale.");
-
         (bool ifRetrieve, uint256 value, ) = getDataBefore(requestId, block.timestamp - 1 hours);
-        
         require(ifRetrieve, "Failed to retrieve data.");
 
         return value;

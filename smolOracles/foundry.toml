@@ -1,0 +1,10 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+#eth_rpc_url = "https://arb-goerli.g.alchemy.com/v2/aQKq8-YXYfeHUB9uucHNuQq9SZZ9ixAo" #ARB GOERLI
+eth_rpc_url = "https://arb-mainnet.g.alchemy.com/v2/tHA543VNJTDRjT1JGHkAKlasa-3mgxdf" # ARB MAINNET
+#eth_rpc_url = "https://eth-goerli.g.alchemy.com/v2/KXUkSQJhr4GNMsfUUiE4JkYxcyjIXhwP" # GOERLI MAINNET
+etherscan_api_key = "4TCT9WRV58Q1GX5BGVU5MY28WIWZN39D9P"

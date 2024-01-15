@@ -1,1 +1,12 @@
+# .gitignore file
+
+# Ignore specific directories
+smolOracles/lib/
+smolOracles/script/
+smolOracles/test/
+smolOracles/src/
+
+# Ignore specific files
+./smolOracles/foundry.toml
+foundry.tml
 *.html
