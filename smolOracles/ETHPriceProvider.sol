@@ -41,6 +41,15 @@ contract ETHPriceProvider is UsingTellor {
         uint256 age;
     }
 
+    enum OracleState {
+        Healthy,           // Both oracles are working
+        ChainlinkBroken,   // Chainlink oracle is broken
+        TellorBroken,      // Tellor oracle is broken
+        BothBroken         // Both oracles are broken
+    }
+
+    OracleState public currentState;
+
     constructor(address _clPriceFeed, address payable _tellorAddress) UsingTellor(_tellorAddress) {
         clPriceFeed = AggregatorV3Interface(_clPriceFeed);
     }
