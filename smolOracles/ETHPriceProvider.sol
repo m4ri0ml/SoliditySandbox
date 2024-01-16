@@ -80,15 +80,18 @@ contract ETHPriceProvider is UsingTellor {
             // also deviates more than 50% from previous price, if true we default to latest price update.
             if (checkPriceDeviation(latestPrice, clPrice)) {
                 if (clPrice == tellorPrice) {
+                    updateState(true, tellorOkey);
                     return clPrice;
                 } 
                 
-                // Chainlink is broken so we take tellor's price and if it deviates we fallback to latest good price.
+                // Chainlink is broken so we check if Tellor deviates and we fallback to latest good price if so.
                 if (checkPriceDeviation(latestPrice, tellorPrice)) {
+                    updateState(false, false);
                     return latestPrice;
                 }
 
                 // Chainlink is broken but Tellor is working fine so we use Tellor as oracle.
+                updateState(false, true);
                 return tellorPrice;
             
             // Chainlink is healthy and has not deviated more than 50% from lastPrice.
@@ -103,12 +106,15 @@ contract ETHPriceProvider is UsingTellor {
             if (tellorOkey) {
 
                 if (checkPriceDeviation(latestPrice, tellorPrice)) {
+                    updateState(false, false);
                     return latestPrice;
                 }
 
+                updateState(false, true);
                 return tellorPrice;
             }
 
+            updateState(false, false);
             return latestPrice;
         }
 
@@ -132,16 +138,12 @@ contract ETHPriceProvider is UsingTellor {
         return true;
     }
 
-    function updateState(bool isChainlinkHealthy, bool isTellorHealthy) public {
-        if (isChainlinkHealthy && isTellorHealthy) {
-            currentState = OracleState.Healthy;
-        } else if (!isChainlinkHealthy && isTellorHealthy) {
-            currentState = OracleState.ChainlinkBroken;
-        } else if (isChainlinkHealthy && !isTellorHealthy) {
-            currentState = OracleState.TellorBroken;
-        } else {
-            currentState = OracleState.BothBroken;
-        }
+    function updateState(bool chainlinkHealthy, bool tellorHealthy) public {
+        if (chainlinkHealthy && tellorHealthy) currentState = OracleState.Healthy;
+        if (!chainlinkHealthy && tellorHealthy) currentState = OracleState.ChainlinkBroken;
+        if (chainlinkHealthy && !tellorHealthy) currentState = OracleState.TellorBroken;
+        
+        currentState = OracleState.BothBroken;
     }
 
     function checkPriceDeviation(uint256 lastPrice, uint256 newPrice) internal pure returns (bool) {
