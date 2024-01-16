@@ -132,6 +132,18 @@ contract ETHPriceProvider is UsingTellor {
         return true;
     }
 
+    function updateState(bool isChainlinkHealthy, bool isTellorHealthy) public {
+        if (isChainlinkHealthy && isTellorHealthy) {
+            currentState = OracleState.Healthy;
+        } else if (!isChainlinkHealthy && isTellorHealthy) {
+            currentState = OracleState.ChainlinkBroken;
+        } else if (isChainlinkHealthy && !isTellorHealthy) {
+            currentState = OracleState.TellorBroken;
+        } else {
+            currentState = OracleState.BothBroken;
+        }
+    }
+
     function checkPriceDeviation(uint256 lastPrice, uint256 newPrice) internal pure returns (bool) {
         uint256 halfLastPrice = lastPrice / 2;
 
